@@ -8,7 +8,7 @@ Modern web development leverages the power of the cloud to provide faster and mo
 * Create a Rails 5 application
 
 ## Course Prerequisites
-This course will use the a cloud integrated development environment (IDE), namely Cloud9 by Amazon Web Services for writing the code and running the development server. <strong>This course will ONLY use the free tier services but to create an account will require signing up and providing credit card details.</strong> You can alternative choose to use a local Docker environment but as your operating system (OS) will vary no support if you choose a local environment.
+This course will use the a cloud integrated development environment (IDE), namely Cloud9 by Amazon Web Services for writing the code and running the development server. <strong>This course will ONLY use the free tier services but to create an account will require signing up and providing credit card details.</strong> You can alternatively choose to use a local Docker environment but as your operating system (OS) will vary no support will be provided if you choose a local environment.
 
 ## Installing & Running the Application
 Installation uses Docker Compose:
@@ -108,9 +108,7 @@ docker-compose run railsapp rails new --database=postgresql -J .
 
 Update the permissions so that we can read, write and execute the folders and files inside `/railsapp`:
 ```
-cd ..
-sudo chmod -R 777 railsapp
-cd railsapp
+sudo chmod -R 777 .
 ```
 In the `Gemfile` remove:
 ```
@@ -191,6 +189,76 @@ docker-compose run web rails db:create
 ```
 Visit *localhost:3000* and see the Hello World Rails app is running.</br>
 Note: To stop the app use `docker-compose down` and restart it with `docker-compose up`</br>
+
+
+# Lesson 2: Begin Test Driven Development 
+## Install and configure RSpec, SimpleCov and Brakeman
+We will use RSpec for writing our test scenarios, SimpleCov for code coverage and Brakeman for static code analysis.<br/>
+Add to the `Gemfile` into the `group :test` block:
+```
+# Testing framework
+gem 'rspec-rails'
+# Code coverage
+gem 'simplecov', require: false
+```
+Also add to the `Gemfile` into the `group :development` block:
+```
+# Static security vulnerability analysis
+gem 'brakeman'
+```
+In Cloud9, use the settings icon next to the folders to turn 'Show Hidden Files' to on.<br/>
+We don't want to upload the coverage reports to Git, so add the following line to `.gitignore`:
+```
+#Ignore coverage files
+coverage/*
+```
+Update the bundle and install the gems:
+```
+docker-compose run railsapp bundle update
+```
+Re-build the container after updating `Gemfile`:
+```
+docker-compose build
+```
+Generate the RSpec configuration:
+```
+docker-compose run railsapp rails generate rspec:install
+```
+Ensure the correct version of RSpec is used:
+```
+docker-compose run railsapp bundle binstubs rspec-core
+```
+Update the permissions so that we can read, write and execute the folders and files inside `/railsapp`:
+```
+sudo chmod -R 777 .
+```
+At the top of `spec/spec_helper.rb`:
+```
+require 'simplecov'
+SimpleCov.start 'rails' do
+  # These filters are excluded from results
+  add_filter '/bin/'
+  add_filter '/db/'
+  add_filter '/spec/'
+  add_filter '/test/'
+  add_filter do |source_file|
+    source_file.lines.count < 5
+  end
+end
+```
+Now when you run RSpec you will see the code coverage and generate a report in the coverage folder.</br>
+```
+docker-compose run railsapp rspec
+```
+To run Brakeman and store the report in our coverage folder:
+```
+docker-compose run railsapp brakeman -o coverage/brakeman_report
+```
+
+## Write specs for admins and events
+
+
+
 
 ## Authors
 
