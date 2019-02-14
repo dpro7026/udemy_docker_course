@@ -478,6 +478,61 @@ docker-compose run railsapp rspec
 We now have Users and Events and will need to write more specs to increase our code coverage. However, first we will add and admin user.
 
 
+# Lesson 5: Create an Admin Dashboard for Managing Users and Events
+Add Activeadmin gem to the Gemfile:
+```
+# For managing admins
+gem 'activeadmin', '~> 1.1'
+```
+Update the bundle and install the gems:
+```
+docker-compose run railsapp bundle update
+```
+Build the Docker image (required anytime the `Gemfile` is modified):
+```
+docker-compose build
+```
+Run Activeadmin generator:
+```
+docker-compose run railsapp rails g active_admin:install
+```
+Update the permissions of the new files generated:
+```
+sudo chmod -R 777 .
+```
+We ALWAYS want to change the default admin credentials. Open `db/seeds.rb` and update the admin credentials.
+```
+AdminUser.create!(email: 'admin@example.com', password: 'admin1', password_confirmation: 'admin1')
+```
+Run database migrations (migrates `db/migrate/*`):
+```
+docker-compose run railsapp rails db:migrate
+```
+Reset the databases:
+```
+docker-compose run railsapp rails db:reset
+```
+Restart the services using docker-compose:
+```
+docker-compose down
+docker-compose up -d
+```
+Browse to <URL>/admin to login and view the admin dashboard. Notice the dashboard does not show Users or Events.<br/>
+Stop the application and add Users and Events to the Admin dashboard:
+```
+docker-compose run railsapp rails g active_admin:resource User
+docker-compose run railsapp rails g active_admin:resource Event
+```
+Update the permissions of the new files generated:
+```
+sudo chmod -R 777 .
+```
+Start the application and view the new Users and Events tabs and see the associated data for these models.
+Run the specs and see that that scenario 1 now passes: 
+```
+docker-compose run railsapp rspec
+```
+
 
 ## Authors
 

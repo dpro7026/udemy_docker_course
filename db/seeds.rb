@@ -1,4 +1,10 @@
 if Rails.env.development?
+    AdminUser.create!(
+        email: 'admin@example.com', 
+        password: 'admin1', 
+        password_confirmation: 'admin1'
+        )
+    
     john = User.create!(
         firstname: 'John', 
         surname: 'Smith', 
