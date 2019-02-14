@@ -1,0 +1,19 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  description: MyText
+  price: 9.99
+  location: MyString
+  date: 2019-02-14 11:14:48
+  private_event: false
+  user: one
+
+two:
+  name: MyString
+  description: MyText
+  price: 9.99
+  location: MyString
+  date: 2019-02-14 11:14:48
+  private_event: false
+  user: two

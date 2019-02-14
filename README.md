@@ -381,6 +381,101 @@ Open app/assets/javascripts/application.js above //= require_tree .:
 ```
 Refresh the page to see the style button.
 
+# Lesson 4: Create Users and Events
+We will use Devise to setup our Users (ensures authenitcation).<br/> 
+Add Devise gem to the `Gemfile`:
+```
+# For user authentication
+gem 'devise', '~> 4.3'
+```
+Update the bundle and install the gems:
+```
+docker-compose run railsapp bundle update
+```
+Build the Docker image (required anytime the `Gemfile` is modified):
+```
+docker-compose build
+```
+Run devise generator (read the instruction output):
+```
+docker-compose run railsapp rails generate devise:install
+```
+Update the permissions of the new files generated:
+```
+sudo chmod -R 777 .
+```
+Add the following to `config/environments/development.rb`:
+```
+# define default url options for mailer
+config.action_mailer.default_url_options = { host: ENV['IP'], port: ENV['PORT'] }
+```
+Add users using Devise generator:
+```
+docker-compose run railsapp rails generate devise User
+```
+Update the permissions of the new files generated:
+```
+sudo chmod -R 777 .
+```
+Update the migration file `<timestamp>_devise_create_users.rb` with additional columns:
+```
+create_table :users do |t|
+  ## Adding our own additional columns to the User table
+  t.string :firstname,           null: false
+  t.string :surname,             null: false
+
+  ## Database authenticatable
+  t.string :email,              null: false, default: ""
+  t.string :encrypted_password, null: false, default: ""
+  ...
+```
+Generate an Event scaffold:
+```
+docker-compose run railsapp rails g scaffold Event name:string description:text price:decimal location:string date:datetime private_event:boolean user:references 
+```
+Update the permissions of the new files generated:
+```
+sudo chmod -R 777 .
+```
+Update the root in `config/routes.rb`:
+```
+root 'events#index'
+```
+Update the `db/seeds.rb` with a default user:
+```
+if Rails.env.development?
+    john = User.create!(
+        firstname: 'John', 
+        surname: 'Smith', 
+        email: 'john@example.com', 
+        password: 'password1', 
+        password_confirmation: 'password1'
+        )
+
+    johns_event = Event.create!(
+        name: 'John\'s Event',
+    	  description: 'Come to John\'s house for the best BBQ of your life!',
+    	  price: 0.00,
+    	  location: 'John\'s House',
+    	  date: DateTime.new(2019,9,5,12,0),
+    	  private_event: false,
+    	  user: john
+        )
+end
+```
+Run database migrations:
+```
+docker-compose run railsapp rails db:migrate
+```
+Reset the databases:
+```
+docker-compose run railsapp rails db:reset
+```
+View the webpage and run the spec to see the code coverage and where the spec is failing:
+```
+docker-compose run railsapp rspec
+```
+We now have Users and Events and will need to write more specs to increase our code coverage. However, first we will add and admin user.
 
 
 
