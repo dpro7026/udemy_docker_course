@@ -256,9 +256,72 @@ docker-compose run railsapp brakeman -o coverage/brakeman_report
 ```
 
 ## Write specs for admins and events
+We want to allow admins to manage users and events.<br/>
+Create a new file in `spec/features` called `admin_spec.rb`:
+```
+require "rails_helper"
 
+RSpec.feature "Admin manages Events and Users" do
+  scenario "An admin can login" do
+    new_admin = User.create!(email: 'admin2@example.com', password: 'password2', password_confirmation: 'password2')
 
+    visit "/admin"
+    
+    fill_in "email", with: new_admin.email
+    fill_in "password", with: new_admin.password
+    click_button "Login"
 
+    expect(page).to have_content("Event")
+    expect(page).to have_content("User")
+  end
+end
+```
+We want to let users create both public events - can be viewed by anyone (does not require login) and private events - can only be viewed by the event creator when they are logged in.<br/>
+Create a new file in `spec/features` called `events_spec.rb`:
+```
+require "rails_helper"
+
+RSpec.feature "Users interacts with Events" do
+  scenario "A user can view Private and Public Events" do
+    visit "/"
+    jane = User.create!(
+      firstname: 'Jane', 
+      surname: 'Doe', 
+      email: 'jane@example.com', 
+      password: 'password2', 
+      password_confirmation: 'password2'
+      )
+    
+    private_event = Event.create!(
+      name: 'Jane\'s Private Event',
+    	description: 'Jane is creating a private event as a reminder to organise a surpirse dinner.',
+    	price: 80.00,
+    	location: nil,
+    	date: 10.days.from_now,
+    	private_event: true,
+      user: jane
+      )
+    
+    public_event = Event.create!(
+      name: 'Jane\'s Public Event',
+    	description: 'Come join Jane for a game of beach volleyball!',
+    	price: 0.00,
+    	location: "The beach",
+    	date: 1.days.from_now,
+    	private_event: false,
+      user: jane
+      )
+    
+    expect(page).to have_content("Public Events")
+    expect(page).to have_content("Private Events")
+    expect(assigns(:events).count).to eq 2
+  end
+end
+```
+Let\'s run our specs and see our first errors so we can begin writing our applcaition code:
+```
+
+```
 
 ## Authors
 
