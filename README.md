@@ -320,8 +320,69 @@ end
 ```
 Let\'s run our specs and see our first errors so we can begin writing our applcaition code:
 ```
-
+docker-compose run railsapp rspec
 ```
+
+# Lesson 3: Create a Homepage and add Bootstrap 4 Styling
+Generate a Homepage with an index action:
+```
+docker-compose run railsapp rails g controller Homepage index
+```
+Update the root URL in `config/routes.rb`:
+```
+Rails.application.routes.draw do
+  get 'homepage/index'
+  root 'homepage#index'
+end
+```
+Run the specs and see that scenario 2 now has a new error:
+```
+docker-compose run railsapp rspec
+```
+Update the permissions so that we can read, write and execute the newly generated files:
+```
+sudo chmod -R 777 .
+```
+Visit [Bootstrap 4 Buttons](https://getbootstrap.com/docs/4.0/components/buttons/).<br/>
+We will add a primary (blue) Bootstrap button to `app/views/homepage/index.html.erb`:
+```
+<h1>Homepage</h1>
+<button type="button" class="btn btn-primary">Button</button>
+```
+Refresh the app and see the button is not styled yet.<br/>
+Add to the `Gemfile` (not in a group) the following:
+```
+# Add Bootstrap 4 for CSS styling
+gem 'bootstrap', '~> 4.2.1'
+# Add JQuery as Rails 5 doesn't include this by default
+gem 'jquery-rails'
+```
+Update the bundle and install the gems:
+```
+docker-compose run railsapp bundle update
+```
+Build the Docker image (required anytime the Gemfile is modified):
+```
+docker-compose build
+```
+Run the following command to rename the `application.css` to `application.scss`, this changes the file extension.
+```
+mv app/assets/stylesheets/application.css app/assets/stylesheets/application.scss
+```
+Open the `app/assets/stylesheets/application.scss` and replace the contents with:
+```
+@import "bootstrap";
+```
+Open app/assets/javascripts/application.js above //= require_tree .:
+```
+//= require jquery3
+//= require popper
+//= require bootstrap-sprockets
+```
+Refresh the page to see the style button.
+
+
+
 
 ## Authors
 
