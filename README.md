@@ -543,11 +543,75 @@ docker-compose run railsapp rspec
 ```
 
 # Lesson 6: Model Validations and Associations
-Create a new folder `spec/models` containing a file `events.rb`:
+Create a new folder `spec/models` containing a file `event_spec.rb`:
+```
+require 'rails_helper'
+require 'support/factory_bot'
+
+RSpec.describe Event, type: :model do
+    let(:user) { build(:user) }
+    let(:event) { build(:event, user: user) }
+    
+    context 'validation tests' do
+        it 'ensures name presence' do
+            event.name = nil
+            expect(event.save).to eq(false)
+            event.name = 'Event Name'
+            expect(event.save).to eq(true)
+        end
+        
+        it 'ensures decription length > 10 characters' do
+            event.location = "Too short"
+            expect(event.save).to eq(false)
+            event.name = "Event decription is over 10 characters"
+            expect(event.save).to eq(true)
+        end
+        
+        it 'ensures location can be nil' do
+            event.location = nil
+            expect(event.save).to eq(true)
+        end
+        
+        it 'ensures date cannot be in the past' do
+            event.date = DateTime.yesterday
+            expect(event.save).to eq(false)
+            event.date = DateTime.tomorrow
+            expect(event.save).to eq(true)
+        end
+        
+        it 'ensures price format is always 2 decimal places' do
+            event.price = 1.1
+            expect(event.price).to eq(1.10)
+            event.price = 1.111
+            expect(event.price).to eq(1.11)
+        end
+    end
+end
 ```
 
-```
 
+Update migration to ensure that price has exactly 2 decimal places: 
+```
+rails g migration change_event_price_to_exactly_two_decimal_places
+```
+Update permissions:
+```
+sudo chmod -R 777 .
+```
+Update the new file `db/migrate/<time_stamp>_change_event_price_to_exactly_two_decimal_places.rb`. 
+Using the up and down format, rather than change allows for rollbacks: 
+```
+class ChangeEventPriceToExactlyTwoDecimalPlaces < ActiveRecord::Migration[5.2]
+  # change_column :table_name, :column_name, :new_type
+  def up
+    change_column :events, :price, :decimal
+  end
+
+  def down
+    change_column :events, :price, :decimal, scale: 2
+  end
+end
+```
 
 # Lesson 7: Feature/Integration Testing 
 Add gems to `group :development, :test do` including Fuubar, Factory Bot and Faker: 
