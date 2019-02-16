@@ -31,9 +31,18 @@ echo "URL: http://$ip:3000"
 ```
 
 ## Stopping the App
-
+To view the docker processes running:
+```
+docker ps
+```
+Stop all processes of the services defined in your `docker-compose` file with:
 ```
 docker-compose down
+```
+If you are running out of memory then check the numer of replica docker images you have and destroy excess docker images:
+```
+docker images
+docker system prune
 ```
 
 # Lesson 1: Create a Hello World Rails 5 App with Docker Compose
@@ -531,6 +540,188 @@ Start the application and view the new Users and Events tabs and see the associa
 Run the specs and see that that scenario 1 now passes: 
 ```
 docker-compose run railsapp rspec
+```
+
+# Lesson 6: Model Validations and Associations
+Create a new folder `spec/models` containing a file `events.rb`:
+```
+
+```
+
+
+# Lesson 7: Feature/Integration Testing 
+Add gems to `group :development, :test do` including Fuubar, Factory Bot and Faker: 
+```
+# Spec progress bar
+gem 'fuubar'
+# Use factories to create sample instances of objects
+gem 'factory_bot_rails'
+# Use faker to generate sample data
+gem 'faker'
+```
+Update the bundle and install the gems:
+```
+docker-compose run railsapp bundle update
+```
+Build the Docker image (required anytime the `Gemfile` is modified):
+```
+docker-compose build
+```
+Update the `.rspec` config to use Fuubar:
+```
+--format Fuubar
+--color
+```
+Run the specs and see the new progress bar, which is ver helpful when tests are long running: 
+```
+docker-compose run railsapp rspec
+``` 
+Create a new folder `spec/support` containing a file `factory_bot.rb`. Add the following initialiser configuration to this file:
+```
+RSpec.configure do |config|
+  config.include FactoryBot::Syntax::Methods
+end
+```
+Create a new file `spec/support/warden.rb`. Add the following initialiser configuration so we can use login_as and similar Warden helper methods in our specs:
+```
+RSpec.configure do |config|
+  config.include Warden::Test::Helpers
+end
+```
+We will now use factories that we can instantiate objects from.<br/>
+Create a new folder `spec/factories` containing a file `users.rb` containing:
+```
+FactoryBot.define do
+  factory :user do
+    firstname { 'Jane' }
+    surname { 'Doe' }
+    email { 'jane@example.com' }
+    password { 'password2' }
+  end
+  
+  factory :another_user, class: User do
+    firstname { 'Tom' }
+    surname { 'Smith' }
+    email { 'tom@example.com' }
+    password { 'password3' }
+  end
+
+  factory :random_user, class: User do
+    firstname { Faker::Pokemon.name }
+    surname { Faker::Pokemon.name }
+    email { Faker::Internet.safe_email }
+    password { 'password' }
+  end
+end
+```
+Update `spec/features/events_spec.rb` to require Factory Bot and build the user using the factory:
+```
+require 'rails_helper'
+require 'support/factory_bot'
+
+RSpec.feature "Users interacts with Events" do
+  given!(:jane) { build(:user) }
+  
+  scenario "A user can view Private and Public Events" do
+    visit "/"
+    
+    private_event = Event.create!(
+      name: 'Jane\'s Private Event',
+    	description: 'Jane is creating a private event as a reminder to organise a surpirse dinner.',
+    	price: 80.00,
+    	location: nil,
+    	date: 10.days.from_now,
+    	private_event: true,
+      user: jane
+      )
+    
+  end
+end
+```
+Create a new factory for events at `spec/factories/events.rb` containing:
+```
+FactoryBot.define do
+  factory :event do
+    name { 'Jane\'s Public Event' }
+    description { 'Jane is hosting a super fun event' }
+    price { 0.00 }
+    location { 'Jane\'s house' }
+    date { 10.days.from_now }
+    private_event { false }
+    user { nil }
+  end
+  
+  factory :another_event, class: Event do
+    name { 'Tom\'s Public Event' }
+    description { 'Tom is hosting a a party!' }
+    price { 10.00 }
+    location { 'Tom\'s house' }
+    date { 10.days.from_now }
+    private_event { false }
+    user { nil }
+  end
+end
+```
+Update the `spec/features/events_spec.rb` to test for all the integration logic of public and priavte events:
+```
+require 'rails_helper'
+require 'support/factory_bot'
+require 'support/warden' 
+
+# Always test the passing and failing scenarios
+RSpec.feature "Events are dependent on a user" do
+  given(:jane) { build(:user) }
+  
+  scenario "Event has a user" do
+    janes_event = build(:event, user: jane)
+    expect(janes_event.save).to eq(true)
+    expect(janes_event.name).to eq('Jane\'s Public Event')
+  end
+  
+  scenario 'Event has no user' do
+    janes_event = build(:event, user: nil)
+    expect(janes_event.save).to eq(false)
+  end
+end
+
+RSpec.feature "Private events are only visible to their creator" do
+  given!(:jane) { create(:user) }
+  given!(:tom) { create(:another_user) }
+  given!(:janes_private_event) { create(:event, user: jane, name: "Jane's Private Event", private_event: true) }
+  given!(:janes_public_event) { create(:event, user: jane, private_event: false) }
+  given!(:toms_private_event) { create(:another_event, name: "Tom's Private Event", user: tom, private_event: true) }
+  given!(:toms_public_event) { create(:another_event, user: tom, private_event: false) }
+  
+  scenario "when user logged in they can see all their events" do
+    login_as jane
+    visit "/"
+    expect(page).to have_content("Public Events")
+    expect(page).to have_content("Jane's Public Event")
+    expect(page).to have_content("Private Events")
+    expect(page).to have_content("Jane's Private Event")
+  end
+  
+  scenario "when user logged in they can't see other user's private events" do
+    login_as tom
+    visit "/"
+    expect(page).to have_content("Public Events")
+    expect(page).to have_content("Jane's Public Event")
+    expect(page).to have_content("Tom's Public Events")
+    expect(page).to have_content("Private Events")
+    expect(page).to have_content("Tom's Private Events")
+    expect(page).to_not have_content("Jane's Private Event")
+  end
+  
+  scenario "when user not logged in they can't see any private events" do
+    visit "/"
+    expect(page).to have_content("Public Events")
+    expect(page).to have_content("Jane's Public Event")
+    expect(page).to have_content("Tom's Public Events")
+    expect(page).to_not have_content("Private Events")
+    expect(page).to_not have_content("Jane's Private Event")
+    expect(page).to_not have_content("Tom's Private Event")
+  end
+end
 ```
 
 

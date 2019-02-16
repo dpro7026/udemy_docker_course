@@ -48,6 +48,12 @@ gem 'activeadmin', '~> 1.1'
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
+  # Spec progress bar
+  gem 'fuubar'
+  # Use factories to create sample instances of objects
+  gem 'factory_bot_rails'
+  # Use faker to generate sample data
+  gem 'faker'
 end
 
 group :development do
