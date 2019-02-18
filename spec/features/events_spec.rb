@@ -9,7 +9,7 @@ RSpec.feature "Events are dependent on a user" do
   scenario "Event has a user" do
     janes_event = build(:event, user: jane)
     expect(janes_event.save).to eq(true)
-    expect(janes_event.name).to eq('Jane\'s Public Event')
+    expect(janes_event.name).to eq("Jane's Public Event")
   end
   
   scenario 'Event has no user' do
@@ -20,39 +20,52 @@ end
 
 RSpec.feature "Private events are only visible to their creator" do
   given!(:jane) { create(:user) }
-  given!(:tom) { create(:another_user) }
+  # given!(:tom) { create(:another_user) }
   given!(:janes_private_event) { create(:event, user: jane, name: "Jane's Private Event", private_event: true) }
-  given!(:janes_public_event) { create(:event, user: jane, private_event: false) }
-  given!(:toms_private_event) { create(:another_event, name: "Tom's Private Event", user: tom, private_event: true) }
-  given!(:toms_public_event) { create(:another_event, user: tom, private_event: false) }
+  # given!(:janes_public_event) { create(:event, user: jane, private_event: false) }
+  # given!(:toms_private_event) { create(:another_event, name: "Tom's Private Event", user: tom, private_event: true) }
+  # given!(:toms_public_event) { create(:another_event, user: tom, private_event: false) }
+  
+  # background do
+  #   login_as(jane, scope: :jane)
+  # end
   
   scenario "when user logged in they can see all their events" do
-    login_as jane
+    # login_as (jane)
+    # sign_in jane
     visit "/"
+    click_button 'Log In'
+    fill_in 'email', with: jane.email
+    fill_in 'password', with: jane.password
+    click_button 'Log in'
+    
     expect(page).to have_content("Public Events")
     expect(page).to have_content("Jane's Public Event")
     expect(page).to have_content("Private Events")
     expect(page).to have_content("Jane's Private Event")
   end
   
-  scenario "when user logged in they can't see other user's private events" do
-    login_as tom
-    visit "/"
-    expect(page).to have_content("Public Events")
-    expect(page).to have_content("Jane's Public Event")
-    expect(page).to have_content("Tom's Public Events")
-    expect(page).to have_content("Private Events")
-    expect(page).to have_content("Tom's Private Events")
-    expect(page).to_not have_content("Jane's Private Event")
-  end
+  # scenario "when user logged in they can see other user's public events" do
+  #   # login_as jane
+  #   visit "/"
+  #   expect(page).to have_content("Tom's Public Event")
+  # end
   
-  scenario "when user not logged in they can't see any private events" do
-    visit "/"
-    expect(page).to have_content("Public Events")
-    expect(page).to have_content("Jane's Public Event")
-    expect(page).to have_content("Tom's Public Events")
-    expect(page).to_not have_content("Private Events")
-    expect(page).to_not have_content("Jane's Private Event")
-    expect(page).to_not have_content("Tom's Private Event")
-  end
+  # scenario "when user logged in they can't see other user's private events" do
+  #   # login_as jane
+  #   visit "/"
+  #   expect(page).to_not have_content("Tom's Private Event")
+    
+  # end
+  
+  # scenario "when user not logged in they can't see any private events" do
+    
+  #   visit "/"
+  #   expect(page).to have_content("Public Events")
+  #   expect(page).to have_content("Jane's Public Event")
+  #   expect(page).to have_content("Tom's Public Event")
+  #   expect(page).to_not have_content("Private Events")
+  #   expect(page).to_not have_content("Jane's Private Event")
+  #   expect(page).to_not have_content("Tom's Private Event")
+  # end
 end

@@ -789,6 +789,18 @@ end
 ```
 
 
+
+```
+RSpec.configure do |config|
+  config.include Warden::Test::Helpers
+  config.after :each do
+    Warden.test_reset!
+  end
+end
+```
+
+
+
 ## Authors
 
 **David Provest** - [LinkedIn](https://www.linkedin.com/in/davidjprovest/)

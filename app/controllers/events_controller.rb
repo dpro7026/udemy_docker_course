@@ -5,6 +5,8 @@ class EventsController < ApplicationController
   # GET /events.json
   def index
     @events = Event.all
+    @private_events = Event.where(private_event: true)
+    @public_events = Event.where(private_event: false)
   end
 
   # GET /events/1
